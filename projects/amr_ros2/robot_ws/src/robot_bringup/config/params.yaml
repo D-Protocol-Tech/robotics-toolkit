@@ -1,0 +1,47 @@
+# ============================================================
+# FILE        : params.yaml
+# PACKAGE     : robot_bringup
+# PROJECT     : amr_ros2
+# DESCRIPTION : AMR project configuration.
+#
+# HOW IT WORKS:
+#   - num_robots defines how many robots to spawn
+#   - Each robot has its own section (robot_1, robot_2...)
+#   - If a value is not set, the kit default is used
+#   - To add a robot: increment num_robots and add a section
+#
+# EXAMPLE — spawn 3 robots:
+#   Set num_robots: 3
+#   Add robot_003 section below
+# ============================================================
+
+fleet:
+  # Number of robots to spawn in the simulation
+  # Change this to spawn more or fewer robots
+  num_robots: 3
+
+# ============================================================
+# ROBOT CONFIGURATIONS
+# Each robot can have its own settings.
+# Any missing value falls back to the kit default.
+# ============================================================
+
+robot_001:
+  name:            "robot_001"
+  x_pose:          0.0        # spawn X position (meters)
+  y_pose:          1.0        # spawn Y position (meters)
+  yaw:             0.0        # spawn orientation (radians)
+
+robot_002:
+  name:            "robot_002"
+  x_pose:          0.0        # different position from robot_1
+  y_pose:         -1.0        # so they don't overlap at spawn
+  yaw:             0.0
+
+robot_003:
+  name:            "robot_003"
+  x_pose:          1.0
+  y_pose:          0.0
+  yaw:             1.57       # facing North
+  max_linear_vel:  0.3        # slower robot
+  max_angular_vel: 0.8

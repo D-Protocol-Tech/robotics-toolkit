@@ -16,7 +16,7 @@ base_controller:
   ros__parameters:
 
     # --- Robot identity ---
-    robot_name: "amr_001"          # Unique name (important for multi-robot)
+    robot_name: "robot_000"          # Unique name (important for multi-robot)
     robot_frame: "base_footprint"  # Root TF frame (ROS navigation convention)
 
     # --- Velocity limits ---
@@ -36,3 +36,4 @@ base_controller:
     # --- Publishing rates ---
     odom_publish_rate:   50.0      # Hz — odometry update frequency
     status_publish_rate:  1.0      # Hz — robot status heartbeat
+    

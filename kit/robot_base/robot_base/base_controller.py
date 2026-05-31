@@ -38,7 +38,7 @@ class BaseController(Node):
     Safety layer and status monitor for the AMR robot base.
 
     Sits between the navigation stack and Gazebo:
-      Nav2 → /cmd_vel → BaseController (safety check) → Gazebo
+        Nav2 → /cmd_vel → BaseController (safety check) → Gazebo
     """
 
     def __init__(self):
@@ -47,7 +47,7 @@ class BaseController(Node):
         # --------------------------------------------------
         # PARAMETERS (all from robot_params.yaml)
         # --------------------------------------------------
-        self.declare_parameter('robot_name', 'amr_001')
+        self.declare_parameter('robot_name', 'robot_000')
         self.declare_parameter('max_linear_velocity', 0.5)
         self.declare_parameter('max_angular_velocity', 1.0)
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')

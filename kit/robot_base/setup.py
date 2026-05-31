@@ -41,9 +41,9 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Kossi',
-    maintainer_email='ton@email.com',
-    description='AMR robot base module — reusable across ROS 2 projects',
+    maintainer='Kossivi',
+    maintainer_email='sd.cosmos.1812@gmail.com',
+    description='Robot base module — reusable across ROS 2 projects',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
