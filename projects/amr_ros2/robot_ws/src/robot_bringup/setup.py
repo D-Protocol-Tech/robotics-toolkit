@@ -21,6 +21,9 @@ setup(
         # World files
         (os.path.join('share', PACKAGE_NAME, 'worlds'),
             glob('worlds/*.world')),
+        # Map files
+        (os.path.join('share', PACKAGE_NAME, 'maps'),
+            glob('maps/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
