@@ -1,7 +1,7 @@
 # ============================================================
 # FILE        : slam_params.yaml
 # MODULE      : slam_module (kit/)
-# DESCRIPTION : slam_toolbox configuration for AMR robot.
+# DESCRIPTION : slam_toolbox configuration for robot.
 #
 # REUSABILITY:
 #   Three environment presets are documented here:
@@ -65,7 +65,7 @@ slam_toolbox:
 
     # --- Map saving ---
     # When you call the save_map service, map goes here
-    map_file_name: /home/kossi/robotics/robotics-toolkit/kit/slam_module/maps/warehouse_map
+    map_file_name: ""
     map_start_pose: [0.0, 0.0, 0.0]   # [x, y, yaw] — robot start position
 
     # --- Debug ---

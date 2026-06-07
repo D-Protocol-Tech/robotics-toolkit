@@ -40,6 +40,26 @@ def generate_launch_description():
         description='Use Gazebo simulated clock'
     )
 
+    input_topic_arg = DeclareLaunchArgument(
+        'input_topic',
+        default_value='/scan',
+        description=(
+            'Raw LiDAR topic to filter. '
+            'Default: /scan. '
+            'For namespaced robots: /robot_001/scan'
+        )
+    )
+
+    odom_input_topic_arg = DeclareLaunchArgument(
+        'odom_input_topic',
+        default_value='/odom',
+        description=(
+            'Raw odometry topic to filter. '
+            'Default: /odom. '
+            'For namespaced robots: /robot_001/odom'
+        )
+    )
+
     # ----------------------------------------------------------
     # NODE: lidar_filter
     # Cleans raw /scan → /sensors/lidar/filtered
@@ -51,7 +71,11 @@ def generate_launch_description():
         output='screen',
         parameters=[
             params_file,
-            {'use_sim_time': LaunchConfiguration('use_sim_time')}
+            {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                # --- Input topic (raw data from hardware or Gazebo) ---
+                'input_topic':  LaunchConfiguration('input_topic'),
+            }
         ]
     )
 
@@ -66,12 +90,18 @@ def generate_launch_description():
         output='screen',
         parameters=[
             params_file,
-            {'use_sim_time': LaunchConfiguration('use_sim_time')}
+            {
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+                # --- Input topic (raw odometry from diff_drive plugin) ---
+                'input_topic':  LaunchConfiguration('odom_input_topic'),
+            }
         ]
     )
 
     return LaunchDescription([
         use_sim_time_arg,
+        input_topic_arg,
+        odom_input_topic_arg,
         lidar_filter_node,
         odom_filter_node,
     ])

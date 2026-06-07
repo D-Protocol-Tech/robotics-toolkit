@@ -44,7 +44,7 @@ def generate_launch_description():
     pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
     nav2_params_file = os.path.join(
-        pkg_nav2_config, 'config', 'nav2_params.yaml'
+        pkg_nav2_config, 'config', 'default_nav2_params.yaml'
     )
 
     # ----------------------------------------------------------
@@ -58,6 +58,21 @@ def generate_launch_description():
         'map_yaml_file', default_value='',
         description='Path to saved map .yaml (empty = use live SLAM map)'
     )
+    params_file_arg = DeclareLaunchArgument(
+        'params_file',
+        default_value=nav2_params_file,
+        description='Path to nav2 params yaml file'
+    )
+    # Robot namespace for topic remapping
+    robot_namespace_arg = DeclareLaunchArgument(
+        'robot_namespace',
+        default_value='',
+        description=(
+            'Robot namespace for topic remapping. '
+            'Example: robot_001 → /robot_001/cmd_vel. '
+            'Empty = no namespace (global topics).'
+        )
+    )
 
     # ----------------------------------------------------------
     # Nav2 bringup
@@ -70,9 +85,28 @@ def generate_launch_description():
         ),
         launch_arguments={
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'params_file': nav2_params_file,
-            'autostart': 'true',
+            'params_file':  LaunchConfiguration('params_file'),
+            'autostart':    'true',
         }.items()
+    )
+
+    # Relay /cmd_vel → /robot_001/cmd_vel
+    # Nav2 publishes on /cmd_vel but robot listens on /robot_001/cmd_vel
+    cmd_vel_relay = TimerAction(
+        period=3.0,
+        actions=[Node(
+            package='topic_tools',
+            executable='relay',
+            name='cmd_vel_relay',
+            output='screen',
+            arguments=[
+                '/cmd_vel',
+                ['/', LaunchConfiguration('robot_namespace'), '/cmd_vel']
+            ],
+            parameters=[{
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
+            }]
+        )]
     )
 
     # ----------------------------------------------------------
@@ -90,7 +124,17 @@ def generate_launch_description():
                 output='screen',
                 parameters=[{
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
-                }]
+                }],
+                # Remap cmd_vel to namespaced topic
+                remappings=[
+                    (
+                        '/cmd_vel', 
+                        [
+                            '/', LaunchConfiguration('robot_namespace'),
+                            '/cmd_vel'
+                        ]
+                    ),
+                ]
             )
         ]
     )
@@ -98,6 +142,9 @@ def generate_launch_description():
     return LaunchDescription([
         use_sim_time_arg,
         map_yaml_arg,
+        params_file_arg,
+        robot_namespace_arg,
         nav2_bringup,
+        cmd_vel_relay,
         mission_client_node,
     ])

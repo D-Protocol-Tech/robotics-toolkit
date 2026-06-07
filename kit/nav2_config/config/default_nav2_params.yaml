@@ -1,5 +1,5 @@
 # ============================================================
-# FILE        : nav2_params.yaml
+# FILE        : default_nav2_params.yaml
 # MODULE      : nav2_config (kit/)
 # DESCRIPTION : Complete Nav2 stack configuration.
 #
@@ -94,7 +94,7 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
 
       # --- Velocity limits (must match robot_base config) ---
-      min_vel_x:    0.0      # m/s — no backwards movement
+      min_vel_x:    -0.20      # m/s — backwards movement
       max_vel_x:    0.5      # m/s — max forward speed
       min_vel_theta: -1.0    # rad/s
       max_vel_theta:  1.0    # rad/s
@@ -233,8 +233,8 @@ local_costmap:
       # Rolling window = costmap FOLLOWS the robot
       # This fixes "robot out of bounds" permanently
       rolling_window: true
-      width:  4      # meters centered on robot
-      height: 4      # meters centered on robot
+      width:  5      # meters centered on robot
+      height: 5      # meters centered on robot
 
       robot_radius: 0.22
 

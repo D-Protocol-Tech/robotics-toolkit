@@ -58,7 +58,7 @@ class MissionClient(Node):
         # --------------------------------------------------
         # PARAMETERS
         # --------------------------------------------------
-        self.declare_parameter('robot_name', 'amr_001')
+        self.declare_parameter('robot_name', 'robot_000')
         self.declare_parameter('goal_timeout', 30.0)    # seconds
 
         self.robot_name = self.get_parameter('robot_name').value

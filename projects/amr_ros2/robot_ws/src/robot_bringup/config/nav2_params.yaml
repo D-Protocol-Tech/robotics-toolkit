@@ -1,0 +1,223 @@
+# ============================================================
+# FILE        : nav2_params.yaml
+# DESCRIPTION : Nav2 configuration specific to AMR project.
+#
+# These values override the kit defaults in:
+#   kit/nav2_config/config/nav2_params.yaml
+#
+# Tuned for our AMR robot:
+#   - Robot radius 0.22m (40x30cm chassis)
+#   - Max speed 0.5 m/s
+#   - Warehouse aisles ~1.5m wide
+# ============================================================
+
+# ============================================================
+# AMCL — Localization on saved map
+# ============================================================
+amcl:
+  ros__parameters:
+    use_sim_time: true
+
+    # --- Topics matching robot namespace ---
+    scan_topic:      /robot_001/scan
+    base_frame_id:   base_footprint
+    odom_frame_id:   odom
+    global_frame_id: map
+
+    # --- Particle filter ---
+    min_particles: 500
+    max_particles: 2000
+
+    # --- Sensor model ---
+    laser_model_type:  likelihood_field
+    laser_max_range:   10.0
+    laser_min_range:   0.12
+    max_beams:         60
+
+    # --- Initial pose ---
+    set_initial_pose: true
+    initial_pose:
+      x:   0.0
+      y:   0.0
+      z:   0.0
+      yaw: 0.0
+
+# ============================================================
+# CONTROLLER SERVER — local path following
+# ============================================================
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+
+    # --- Odom topic matching robot namespace ---
+    odom_topic: /robot_001/odom
+
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+
+      # --- Velocity limits matching our AMR robot ---
+      min_vel_x:     0.0
+      max_vel_x:     0.5      # m/s — matches robot_001 config
+      min_vel_theta: -1.0
+      max_vel_theta:  1.0
+      max_speed_xy:   0.5
+
+      # --- Acceleration limits ---
+      acc_lim_x:     2.5
+      acc_lim_theta: 3.2
+      decel_lim_x:  -2.5
+
+      # --- Goal tolerance ---
+      xy_goal_tolerance:  0.25   # meters
+      yaw_goal_tolerance: 0.25   # radians
+
+      # --- DWB critics ---
+      critics: [
+        "RotateToGoal", "Oscillation", "BaseObstacle",
+        "GoalAlign", "PathAlign", "PathDist", "GoalDist"
+      ]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale:    32.0
+      GoalAlign.scale:    24.0
+      PathDist.scale:     32.0
+      GoalDist.scale:     24.0
+      RotateToGoal.scale: 32.0
+
+# ============================================================
+# PLANNER SERVER — global path planning
+# ============================================================
+planner_server:
+  ros__parameters:
+    use_sim_time: true
+    expected_planner_frequency: 20.0
+
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin:        "nav2_navfn_planner/NavfnPlanner"
+      tolerance:     0.5
+      use_astar:     true
+      allow_unknown: true
+
+# ============================================================
+# COSTMAPS
+# ============================================================
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      use_sim_time: true
+      global_frame:      map
+      robot_base_frame:  base_footprint
+      update_frequency:  1.0
+      publish_frequency: 1.0
+      resolution:        0.05
+
+      # Robot size: 40x30cm → radius ~0.22m
+      robot_radius: 0.22
+
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+
+      static_layer:
+        plugin:  "nav2_costmap_2d::StaticLayer"
+        enabled: true
+
+      obstacle_layer:
+        plugin:  "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic:     /robot_001/scan
+          data_type: LaserScan
+          clearing:  true
+          marking:   true
+
+      inflation_layer:
+        plugin:           "nav2_costmap_2d::InflationLayer"
+        inflation_radius:  0.55   # safety margin around walls
+        cost_scaling_factor: 3.0
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: true
+      global_frame:     odom
+      robot_base_frame: base_footprint
+      update_frequency:  5.0
+      publish_frequency: 2.0
+      resolution:        0.05
+
+      rolling_window: true
+      width:  4
+      height: 4
+
+      robot_radius: 0.22
+
+      plugins: ["obstacle_layer", "inflation_layer"]
+
+      obstacle_layer:
+        plugin:  "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic:     /robot_001/scan
+          data_type: LaserScan
+          clearing:  true
+          marking:   true
+
+      inflation_layer:
+        plugin:           "nav2_costmap_2d::InflationLayer"
+        inflation_radius:  0.55
+        cost_scaling_factor: 3.0
+
+# ============================================================
+# BT NAVIGATOR
+# ============================================================
+bt_navigator:
+  ros__parameters:
+    use_sim_time: true
+    global_frame:      map
+    robot_base_frame:  base_footprint
+    odom_topic:        /robot_001/odom
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator/NavigateThroughPosesNavigator"
+
+# ============================================================
+# BEHAVIOR SERVER
+# ============================================================
+behavior_server:
+  ros__parameters:
+    use_sim_time: true
+    costmap_topic:    local_costmap/costmap_raw
+    footprint_topic:  local_costmap/published_footprint
+    cycle_frequency:  10.0
+    behavior_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    global_frame:      odom
+    robot_base_frame:  base_footprint
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+
+# ============================================================
+# LIFECYCLE MANAGER
+# ============================================================
+lifecycle_manager:
+  ros__parameters:
+    use_sim_time: true
+    autostart: true
+    node_names:
+      - map_server
+      - amcl
+      - planner_server
+      - controller_server
+      - behavior_server
+      - bt_navigator

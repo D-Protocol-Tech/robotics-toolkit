@@ -23,7 +23,7 @@ fleet:
 
 navigation:
   mode: "mapping"
-  nav_start_delay: 15.0
+  nav_start_delay: 25.0
 
 # ============================================================
 # ROBOT CONFIGURATIONS

@@ -12,9 +12,6 @@ lidar_filter:
   ros__parameters:
     use_sim_time: true
 
-    # --- Input topic (raw data from hardware or Gazebo) ---
-    input_topic:  "/scan"
-
     # --- Output topic (clean data for SLAM, Nav2, AI) ---
     output_topic: "/sensors/lidar/filtered"
 
@@ -25,9 +22,6 @@ lidar_filter:
 odom_filter:
   ros__parameters:
     use_sim_time: true
-
-    # --- Input topic (raw odometry from diff_drive plugin) ---
-    input_topic:  "/odom"
 
     # --- Output topic (validated odometry for Nav2/SLAM) ---
     output_topic: "/sensors/odom/filtered"
