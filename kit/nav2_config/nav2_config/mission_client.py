@@ -34,9 +34,8 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import NavigateToPose
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import PoseStamped as PS
 
 
 class MissionClient(Node):
@@ -73,6 +72,7 @@ class MissionClient(Node):
         self.goals_completed = 0
         self.goals_failed = 0
         self._goal_handle = None
+        self.goal_start_time = None
 
         # --------------------------------------------------
         # ACTION CLIENT: Nav2 NavigateToPose
@@ -80,20 +80,15 @@ class MissionClient(Node):
         self._nav_client = ActionClient(
             self,
             NavigateToPose,
-            'navigate_to_pose'
+            f'/{self.robot_name}/navigate_to_pose'
         )
 
         # --------------------------------------------------
         # PUBLISHER: navigation status
         # --------------------------------------------------
         self.status_pub = self.create_publisher(
-            String, '/nav/status', 10
+            String, f'/{self.robot_name}/nav/status', 10
         )
-
-        # --------------------------------------------------
-        # TIMER: publish status
-        # --------------------------------------------------
-        self.timer = self.create_timer(1.0, self._publish_status)
 
         self.get_logger().info(
             f'MissionClient ready — robot: {self.robot_name}'
@@ -104,12 +99,25 @@ class MissionClient(Node):
         # RViz2 publishes here when user clicks on the map
         # --------------------------------------------------
         self.goal_sub = self.create_subscription(
-            PS,
-            '/goal_pose',
+            PoseStamped,
+            f'/{self.robot_name}/goal_pose',
             self._on_goal_pose,
             10
         )
-        self.get_logger().info('Listening for goals on /goal_pose...')
+
+        # Sécurité : Écoute un éventuel arrêt d'urgence
+        self.estop_sub = self.create_subscription(
+            Bool,
+            f'/{self.robot_name}/emergency_stop',
+            self._on_emergency_stop,
+            10
+        )
+
+        # --------------------------------------------------
+        # TIMER: publish status & check timeout (1Hz)
+        # --------------------------------------------------
+        self.timer = self.create_timer(1.0, self._on_timer_tick)
+        self.get_logger().info(f'Listening for goals on /{self.robot_name}/goal_pose...')
 
     def go_to(self, x: float, y: float, yaw: float = 0.0):
         """
@@ -139,8 +147,12 @@ class MissionClient(Node):
         goal_msg.pose = self._build_pose_stamped(x, y, yaw)
 
         self.get_logger().info(
-            f'Sending goal: x={x:.2f}, y={y:.2f}, yaw={yaw:.2f}'
+            f'Sending goal to {self.robot_name} '
+            f'x={x:.2f}, y={y:.2f}, yaw={yaw:.2f}'
         )
+
+        # Starting the timer before sending
+        self.goal_start_time = self.get_clock().now()
 
         # Send goal asynchronously
         send_goal_future = self._nav_client.send_goal_async(
@@ -154,6 +166,17 @@ class MissionClient(Node):
         self.current_goal_y = y
         return True
 
+    def cancel_goal(self):
+        """Cancel the current navigation goal."""
+        if self._goal_handle is not None:
+            self._goal_handle.cancel_goal_async()
+            self.status = self.STATUS_CANCELLED
+            self.goal_start_time = None
+            self.get_logger().info('Goal actively cancelled')
+
+    # ----------------------------------------------------------
+    # PRIVATE: action callbacks
+    # ----------------------------------------------------------
     def _on_goal_pose(self, msg: PoseStamped):
         """
         Called when RViz2 publishes a 2D Goal Pose.
@@ -173,16 +196,14 @@ class MissionClient(Node):
         )
         self.go_to(x=x, y=y, yaw=yaw)
 
-    def cancel_goal(self):
-        """Cancel the current navigation goal."""
-        if self._goal_handle is not None:
-            self._goal_handle.cancel_goal_async()
-            self.status = self.STATUS_CANCELLED
-            self.get_logger().info('Goal cancelled')
+    def _on_emergency_stop(self, msg: Bool):
+        """Triggers immediate stop if True is received on the E-Stop topic."""
+        if msg.data and self.status == self.STATUS_NAVIGATING:
+            self.get_logger().warn(
+                f'!!! EMERGENCY STOP RECEIVED FOR {self.robot_name} !!!'
+            )
+            self.cancel_goal()
 
-    # ----------------------------------------------------------
-    # PRIVATE: action callbacks
-    # ----------------------------------------------------------
     def _on_goal_response(self, future):
         """Called when Nav2 accepts or rejects our goal."""
         self._goal_handle = future.result()
@@ -191,6 +212,7 @@ class MissionClient(Node):
             self.get_logger().error('Goal rejected by Nav2')
             self.status = self.STATUS_FAILED
             self.goals_failed += 1
+            self.goal_start_time = None
             return
 
         self.get_logger().info('Goal accepted by Nav2 — navigating...')
@@ -206,26 +228,27 @@ class MissionClient(Node):
         """
         distance = feedback_msg.feedback.distance_remaining
         self.get_logger().info(
-            f'Distance remaining: {distance:.2f} m',
+            f'{self.robot_name} -> Distance remaining: {distance:.2f} m',
             throttle_duration_sec=2.0  # log max once every 2 seconds
         )
 
     def _on_result(self, future):
         """Called when navigation goal completes (success or failure)."""
         result = future.result()
+        self.goal_start_time = None
 
         if result.status == GoalStatus.STATUS_SUCCEEDED:
             self.status = self.STATUS_SUCCEEDED
             self.goals_completed += 1
             self.get_logger().info(
-                f'Goal reached! '
+                f'Goal reached successfully by {self.robot_name}! '
                 f'({self.current_goal_x:.2f}, {self.current_goal_y:.2f})'
             )
         else:
             self.status = self.STATUS_FAILED
             self.goals_failed += 1
             self.get_logger().warn(
-                f'Goal failed with status: {result.status}'
+                f'Goal failed with status: {result.status} by {self.robot_name}'
             )
 
     def _build_pose_stamped(
@@ -249,6 +272,27 @@ class MissionClient(Node):
         pose.pose.orientation.w = math.cos(yaw / 2.0)
 
         return pose
+
+    # ----------------------------------------------------------
+    # TIMED MONITORING & STATUS
+    # ----------------------------------------------------------
+    def _on_timer_tick(self):
+        """Fired every second to publish status and enforce safety timeouts."""
+        # 1. Gestion du Timeout
+        if self.status == self.STATUS_NAVIGATING and self.goal_start_time is not None:
+            # Calcul du temps écoulé en secondes
+            now = self.get_clock().now()
+            elapsed_sec = (now - self.goal_start_time).nanoseconds / 1e9
+
+            if elapsed_sec > self.goal_timeout:
+                self.get_logger().error(
+                    f'[TIMEOUT] Robot {self.robot_name} exceeded limit of {self.goal_timeout}s! Cancelling mission.'
+                )
+                self.goals_failed += 1
+                self.cancel_goal()
+
+        # 2. Publication du rapport d'état
+        self._publish_status()
 
     def _publish_status(self):
         """Publishes navigation status as JSON."""

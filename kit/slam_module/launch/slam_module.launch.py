@@ -37,7 +37,20 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     pkg_slam = get_package_share_directory('slam_module')
-    slam_params_file = os.path.join(pkg_slam, 'config', 'slam_params.yaml')
+    slam_params_file = os.path.join(pkg_slam, 'config', 'default_slam_params.yaml')
+
+    default_maps_dir = os.path.join(pkg_slam, 'maps')
+    default_map_path = os.path.join(default_maps_dir, 'house_map')
+    default_yaml_file = f"{default_map_path}.yaml"
+
+    if os.path.exists(default_yaml_file):
+        default_mode = 'localization'
+        slam_map_file = default_map_path
+        log_msg = f"[slam_module] Default map found! Automatically selecting LOCALIZATION mode."
+    else:
+        default_mode = 'mapping'
+        slam_map_file = ''
+        log_msg = f"[slam_module] No default map found. Automatically selecting MAPPING mode."
 
     # ----------------------------------------------------------
     # ARGUMENTS
@@ -47,6 +60,31 @@ def generate_launch_description():
         default_value='true',
         description='Use Gazebo clock'
     )
+
+    map_dir_arg = DeclareLaunchArgument(
+        'map_dir',
+        default_value=default_maps_dir,
+        description='Directory where the map files will be saved'
+    )
+
+    map_name_arg = DeclareLaunchArgument(
+        'map_name',
+        default_value='house_map',
+        description='Base name of the saved map files'
+    )
+
+    load_map_arg = DeclareLaunchArgument(
+        'load_map',
+        default_value=default_yaml_file,
+        description='The saved map files to load.'
+    )
+
+    mode_arg = DeclareLaunchArgument(
+        'mode',
+        default_value=default_mode,
+        description='SLAM mode: mapping or localization'
+    )
+
 
     # ----------------------------------------------------------
     # NODE 1: slam_toolbox
@@ -62,7 +100,11 @@ def generate_launch_description():
         output='screen',
         parameters=[
             slam_params_file,
-            {'use_sim_time': LaunchConfiguration('use_sim_time')}
+            {
+                'use_sim_time':     LaunchConfiguration('use_sim_time'),
+                'mode':             LaunchConfiguration('mode'),
+                'map_file_name':    slam_map_file,
+            }
         ],
     )
 
@@ -81,7 +123,11 @@ def generate_launch_description():
                 output='screen',
                 parameters=[
                     slam_params_file,
-                    {'use_sim_time': LaunchConfiguration('use_sim_time')}
+                    {
+                        'use_sim_time': LaunchConfiguration('use_sim_time'),
+                        'map_directory': LaunchConfiguration('map_dir'),
+                        'map_filename': LaunchConfiguration('map_name'),
+                    }
                 ],
             )
         ]
@@ -89,6 +135,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         use_sim_time_arg,
+        map_dir_arg,
+        map_name_arg,
+        load_map_arg,
+        mode_arg,
         slam_toolbox_node,
         map_manager_node,
     ])

@@ -31,8 +31,8 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    pkg = get_package_share_directory('sensor_interface')
-    params_file = os.path.join(pkg, 'config', 'sensor_params.yaml')
+    pkg_sensor = get_package_share_directory('sensor_interface')
+    params_file = os.path.join(pkg_sensor, 'config', 'default_sensor_params.yaml')
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',

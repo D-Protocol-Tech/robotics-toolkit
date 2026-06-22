@@ -1,5 +1,5 @@
 # ============================================================
-# FILE        : default_nav2_params.yaml
+# FILE        : default_nav2_localization_params.yaml
 # MODULE      : nav2_config (kit/)
 # DESCRIPTION : Complete Nav2 stack configuration.
 #

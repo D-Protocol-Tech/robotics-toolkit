@@ -1,6 +1,6 @@
 """
 ============================================================
-FILE        : entity.launch.py
+FILE        : entity.py
 PACKAGE     : robot_bringup
 PROJECT     : amr_ros2
 DESCRIPTION : Handles robot spawning in Gazebo.
@@ -62,8 +62,8 @@ def get_robot_config(params: dict, robot_key: str) -> dict:
 
 def make_robot_launch(
     robot_config: dict,
-    world_file_path: str,
-    use_rviz: str,
+    world_file_path,
+    rviz,
 ) -> IncludeLaunchDescription:
     """
     Builds the launch action for one robot.
@@ -89,14 +89,15 @@ def make_robot_launch(
             'gazebo':          'false',
             # Only first robot opens RViz2
             # (one RViz2 window is enough for the whole fleet)
-            'use_rviz':        use_rviz,
+            'rviz':        rviz,
         }.items()
     )
 
 
 def generate_entity_actions(
     params_file: str,
-    world_file_path: str,
+    world_file_path,
+    rviz,
 ) -> list:
     """
     Builds the list of spawn actions for all robots.
@@ -142,10 +143,12 @@ def generate_entity_actions(
             f'{robot_config.get("y_pose", 0.0)})'
         )))
 
+        rviz_arg = rviz if is_first else 'false'
+
         actions.append(make_robot_launch(
             robot_config=robot_config,
             world_file_path=world_file_path,
-            use_rviz='false' if is_first else 'false',
+            rviz=rviz_arg,
         ))
 
     return actions

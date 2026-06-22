@@ -1,16 +1,14 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sensor_interface</name>
+  <name>simulation</name>
   <version>0.1.0</version>
   <description>TODO: Package description</description>
   <maintainer email="sd.cosmos.1812@gmail.com">kossi</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
-  <depend>sensor_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>diagnostic_msgs</depend>
+  <depend>gazebo_ros</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

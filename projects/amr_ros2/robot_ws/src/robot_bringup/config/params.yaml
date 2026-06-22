@@ -18,11 +18,11 @@
 fleet:
   # Number of robots to spawn in the simulation
   # Change this to spawn more or fewer robots
-  num_robots: 1
+  num_robots: 2
 
 
 navigation:
-  mode: "mapping"
+  mode: 'mapping'
   nav_start_delay: 25.0
 
 # ============================================================

@@ -33,9 +33,11 @@ from launch.actions import (
     IncludeLaunchDescription,
     TimerAction,
 )
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.conditions import IfCondition
+from launch.substitutions import PythonExpression
+from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -43,8 +45,12 @@ def generate_launch_description():
     pkg_nav2_config = get_package_share_directory('nav2_config')
     pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
-    nav2_params_file = os.path.join(
-        pkg_nav2_config, 'config', 'default_nav2_params.yaml'
+    default_mapping_params = os.path.join(
+        pkg_nav2_config, 'config', 'default_nav2_mapping_params.yaml'
+    )
+
+    default_localization_params = os.path.join(
+        pkg_nav2_config, 'config', 'default_nav2_localization_params.yaml'
     )
 
     # ----------------------------------------------------------
@@ -58,11 +64,6 @@ def generate_launch_description():
         'map_yaml_file', default_value='',
         description='Path to saved map .yaml (empty = use live SLAM map)'
     )
-    params_file_arg = DeclareLaunchArgument(
-        'params_file',
-        default_value=nav2_params_file,
-        description='Path to nav2 params yaml file'
-    )
     # Robot namespace for topic remapping
     robot_namespace_arg = DeclareLaunchArgument(
         'robot_namespace',
@@ -73,21 +74,65 @@ def generate_launch_description():
             'Empty = no namespace (global topics).'
         )
     )
+    mode_arg = DeclareLaunchArgument(
+        'mode',
+        default_value='mapping',
+        description='mapping or localization'
+    )
+    # NEW — allows passing a custom params file per robot
+    # params_file_arg = DeclareLaunchArgument(
+    #     'params_file',
+    #     default_value=default_mapping_params,
+    #     description=(
+    #         'Path to nav2 params yaml file. '
+    #         'In multi-robot mode, pass a robot-specific '
+    #         'params file generated with correct topics.'
+    #     )
+    # )
 
     # ----------------------------------------------------------
     # Nav2 bringup
     # Includes all Nav2 nodes: AMCL, planner, controller, BT
     # We use the official nav2_bringup launch as base
     # ----------------------------------------------------------
-    nav2_bringup = IncludeLaunchDescription(
+    nav2_mapping = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_nav2_bringup, 'launch', 'navigation_launch.py')
+            os.path.join(
+                pkg_nav2_bringup, 'launch', 'navigation_launch.py'
+            )
         ),
         launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'params_file':  LaunchConfiguration('params_file'),
-            'autostart':    'true',
-        }.items()
+            'use_sim_time':  LaunchConfiguration('use_sim_time'),
+            'params_file':   default_mapping_params,
+            'autostart':     'true',
+            'namespace':     LaunchConfiguration('robot_namespace'),
+            'use_namespace': 'true',
+        }.items(),
+        condition=IfCondition(PythonExpression([
+            "'", LaunchConfiguration('mode'), "' == 'mapping'"
+        ]))
+    )
+
+    # ----------------------------------------------------------
+    # Nav2 — localization mode
+    # ----------------------------------------------------------
+    nav2_localization = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                pkg_nav2_bringup, 'launch', 'navigation_launch.py'
+            )
+        ),
+        launch_arguments={
+            'use_sim_time':  LaunchConfiguration('use_sim_time'),
+            'params_file':   default_localization_params,
+            'map':           LaunchConfiguration('map_yaml_file'),
+            'autostart':     'true',
+            'namespace':     LaunchConfiguration('robot_namespace'),
+            'use_namespace': 'true',
+        }.items(),
+        condition=IfCondition(PythonExpression([
+            "'", LaunchConfiguration('mode'), "' == 'localization'"
+        ]))
     )
 
     # Relay /cmd_vel → /robot_001/cmd_vel
@@ -124,27 +169,21 @@ def generate_launch_description():
                 output='screen',
                 parameters=[{
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
-                }],
-                # Remap cmd_vel to namespaced topic
-                remappings=[
-                    (
-                        '/cmd_vel', 
-                        [
-                            '/', LaunchConfiguration('robot_namespace'),
-                            '/cmd_vel'
-                        ]
-                    ),
-                ]
+                    'robot_name': LaunchConfiguration('robot_namespace'),
+                }]
             )
         ]
     )
 
+
     return LaunchDescription([
         use_sim_time_arg,
         map_yaml_arg,
-        params_file_arg,
+        mode_arg,
         robot_namespace_arg,
-        nav2_bringup,
+        # params_file_arg,
+        nav2_mapping,
+        nav2_localization,
         cmd_vel_relay,
         mission_client_node,
     ])

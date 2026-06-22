@@ -37,7 +37,7 @@ USAGE EXAMPLES:
         x_pose:=2.0 y_pose:=1.0
 
     # With RViz2 auto-launched
-    ros2 launch robot_base robot_base.launch.py gazebo:=true use_rviz:=true
+    ros2 launch robot_base robot_base.launch.py gazebo:=true rviz:=true
 
     # Slower safer robot
     ros2 launch robot_base robot_base.launch.py gazebo:=true \
@@ -188,8 +188,8 @@ def generate_launch_description():
     )
 
     # RViz2 & Gazebo auto-launch
-    use_rviz_arg = DeclareLaunchArgument(
-        'use_rviz',
+    rviz_arg = DeclareLaunchArgument(
+        'rviz',
         default_value='false',
         description=(
             'Automatically launch RViz2 for visualization (true/false). '
@@ -343,7 +343,7 @@ def generate_launch_description():
     # ----------------------------------------------------------
     # NODE 4: RViz2 (optional)
     #
-    # Only launched if use_rviz:=true.
+    # Only launched if rviz:=true.
     # IfCondition checks the launch argument value.
     # ----------------------------------------------------------
     rviz_node = Node(
@@ -351,7 +351,7 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         output='screen',
-        condition=IfCondition(LaunchConfiguration('use_rviz')),
+        condition=IfCondition(LaunchConfiguration('rviz')),
     )
 
     # ----------------------------------------------------------
@@ -368,7 +368,7 @@ def generate_launch_description():
         urdf_path_arg,
         world_file_arg,
         use_sim_time_arg,
-        use_rviz_arg,
+        rviz_arg,
         max_linear_vel_arg,
         max_angular_vel_arg,
         # 2. Start nodes

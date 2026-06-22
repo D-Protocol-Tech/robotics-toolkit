@@ -2,7 +2,7 @@
 ============================================================
 FILE        : base_controller.py
 MODULE      : robot_base (kit/)
-DESCRIPTION : Base controller node for the AMR robot.
+DESCRIPTION : Base controller node for the robot.
 
 WHAT IT DOES:
     - Subscribes to /cmd_vel to receive velocity commands
@@ -20,7 +20,7 @@ TOPICS:
     Publishes  : /robot_status (std_msgs/String)
 
 REUSABILITY:
-    All limits and topic names come from robot_params.yaml.
+    All limits and topic names come from default_params.yaml.
     Drop this node into any differential-drive robot project.
 ============================================================
 """
@@ -35,7 +35,7 @@ import json
 
 class BaseController(Node):
     """
-    Safety layer and status monitor for the AMR robot base.
+    Safety layer and status monitor for the robot base.
 
     Sits between the navigation stack and Gazebo:
         Nav2 → /cmd_vel → BaseController (safety check) → Gazebo
@@ -45,7 +45,7 @@ class BaseController(Node):
         super().__init__('base_controller')
 
         # --------------------------------------------------
-        # PARAMETERS (all from robot_params.yaml)
+        # PARAMETERS (all from default_params.yaml)
         # --------------------------------------------------
         self.declare_parameter('robot_name', 'robot_000')
         self.declare_parameter('max_linear_velocity', 0.5)

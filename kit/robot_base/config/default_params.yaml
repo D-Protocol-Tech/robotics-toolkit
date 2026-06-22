@@ -1,7 +1,7 @@
 # ============================================================
 # FILE        : robot_params.yaml
 # MODULE      : robot_base (kit/)
-# DESCRIPTION : All configurable parameters for the AMR robot.
+# DESCRIPTION : All configurable parameters for the robot.
 #
 # REUSABILITY RULE:
 #     When reusing robot_base in another project, only edit

@@ -17,7 +17,7 @@ HOW TO USE:
 
     # Robots only — no navigation (useful for testing spawn)
     ros2 launch robot_bringup bringup.launch.py \
-        with_navigation:=false
+        nav2:=false
 
     # Custom world
     ros2 launch robot_bringup bringup.launch.py \
@@ -53,6 +53,7 @@ def generate_launch_description():
     """Master launch — orchestrates the complete AMR project."""
 
     pkg_robot_bringup = get_package_share_directory('robot_bringup')
+    pkg_simulation = get_package_share_directory('simulation')
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
 
     params_file = os.path.join(
@@ -60,13 +61,7 @@ def generate_launch_description():
     )
 
     # Resolve world file path
-    # Priority: simulation/gazebo/worlds/ > empty world
-    candidate_world = os.path.join(
-        os.path.dirname(pkg_robot_bringup),
-        '..', '..', '..', 'simulation', 'gazebo', 'worlds',
-        'amr_world.world'
-    )
-    candidate_world = os.path.abspath(candidate_world)
+    candidate_world = os.path.join(pkg_simulation, 'worlds', 'amr_world.world')
 
     if os.path.exists(candidate_world):
         world_to_load = candidate_world
@@ -99,6 +94,12 @@ def generate_launch_description():
         description='Use Gazebo simulated clock.'
     )
 
+    rviz_arg = DeclareLaunchArgument(
+        'rviz',
+        default_value='false',
+        description='Automatically launch RViz2 for the first robot (true/false).'
+    )
+
     # ----------------------------------------------------------
     # GAZEBO — launched once for all robots
     # ----------------------------------------------------------
@@ -107,7 +108,7 @@ def generate_launch_description():
             os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')
         ),
         launch_arguments={
-            'world':   world_to_load,
+            'world':   LaunchConfiguration('world_file'),
             'verbose': 'false',
         }.items()
     )
@@ -119,6 +120,7 @@ def generate_launch_description():
     entity_actions = generate_entity_actions(
         params_file=params_file,
         world_file_path=world_to_load,
+        rviz=LaunchConfiguration('rviz'),
     )
 
     # ----------------------------------------------------------
@@ -137,6 +139,7 @@ def generate_launch_description():
         # Arguments
         world_file_arg,
         nav2_arg,
+        rviz_arg,
         use_sim_time_arg,
         # Info
         LogInfo(msg=f'[bringup] World: {world_label}'),

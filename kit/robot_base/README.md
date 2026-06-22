@@ -82,7 +82,7 @@ All arguments have sensible defaults.
 | `urdf_path` | built-in robot | Path to a custom URDF or Xacro file. |
 | `world_file` | empty world | Path to a custom Gazebo `.world` file. |
 | `use_sim_time` | `true` | Use Gazebo clock. Set `false` for a real physical robot. |
-| `use_rviz` | `false` | Auto-launch RViz2 for visualization. |
+| `rviz` | `false` | Auto-launch RViz2 for visualization. |
 | `max_linear_vel` | `0.5` m/s | Safety speed limit. Robot never exceeds this. |
 | `max_angular_vel` | `1.0` rad/s | Safety rotation limit. |
 | `gazebo` | `false` | Only open gazebo in standalone mode |
@@ -118,7 +118,7 @@ ros2 launch robot_base robot_base.launch.py gazebo:=true
 
 ### With RViz2 auto-launched
 ```bash
-ros2 launch robot_base robot_base.launch.py gazebo:=true use_rviz:=true
+ros2 launch robot_base robot_base.launch.py gazebo:=true rviz:=true
 ```
 
 ### Custom robot URDF
@@ -174,7 +174,7 @@ ros2 launch robot_base robot_base.launch.py gazebo:=true \
     yaw:=3.14                       \
     max_linear_vel:=0.3             \
     max_angular_vel:=0.5            \
-    use_rviz:=true
+    rviz:=true
 ```
 
 ---
@@ -218,7 +218,7 @@ robot_base = IncludeLaunchDescription(
         'world_file':     '/path/to/robot_world.world',
         'x_pose':         '0.0',
         'y_pose':         '0.0',
-        'use_rviz':       'false',
+        'rviz':           'false',
         'max_linear_vel': '0.5',
     }.items()
 )

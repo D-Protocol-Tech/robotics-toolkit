@@ -1,5 +1,5 @@
 # ============================================================
-# FILE        : slam_params.yaml
+# FILE        : default_slam_params.yaml
 # MODULE      : slam_module (kit/)
 # DESCRIPTION : slam_toolbox configuration for robot.
 #
@@ -13,11 +13,6 @@
 
 slam_toolbox:
   ros__parameters:
-
-    # --- Mode ---
-    # "mapping"      : build a new map (use when exploring)
-    # "localization" : navigate on an existing saved map
-    mode: mapping
 
     # --- Solver (math engine for scan matching) ---
     # solver_plugin: solver_plugins::CeresSolver  ← more accurate
