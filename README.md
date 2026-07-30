@@ -35,7 +35,7 @@ dans un autre projet ROS 2 sans modification majeure.
 
 ```bash
 # Cloner le repo
-git clone https://github.com/TON_USERNAME/amr-ros2-toolkit.git
+git clone https://github.com/D-Protocol-Tech/amr-ros2-toolkit.git
 cd amr-ros2-toolkit
 
 # Installer les dépendances
@@ -56,7 +56,3 @@ source install/setup.bash
 - `v0.4` — Navigation autonome Nav2
 - `v0.5` — Vision IA (QR + YOLO)
 - `v1.0` — Flotte multi-robots complète
-
-## Auteur
-
-Kossi — [GitHub](https://github.com/TON_USERNAME)
